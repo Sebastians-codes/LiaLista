@@ -34,7 +34,7 @@ public static class Utils
         {
             Console.Write(message);
 
-            if (int.TryParse(Console.ReadKey().KeyChar.ToString(), out int num) &&
+            if (int.TryParse(Console.ReadLine(), out int num) &&
                     num <= max && num >= min)
             {
                 return num;

@@ -80,11 +80,17 @@ public class Repository
 
     public string GetAll()
     {
+        Console.Clear();
         StringBuilder sb = new();
 
-        foreach (var company in _companies)
+        foreach (var company in _companies.OrderByDescending(x => x.Intrest))
         {
             sb.Append(company.ToString());
+        }
+
+        if (sb.Length == 0)
+        {
+            return "There is no Companies Registered";
         }
 
         return sb.ToString();
