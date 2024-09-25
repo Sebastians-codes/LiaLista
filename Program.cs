@@ -31,6 +31,16 @@ if (args.Length == 1)
             companyName = Utils.GetString("Företags namn: ->> ");
             repo.SetResponse(companyName, Utils.GetResponse);
             break;
+        case "contacted":
+            companyName = Utils.GetString("Företags namn: ->> ");
+            repo.SetContacted(companyName);
+            break;
+        case "waiting":
+            Console.WriteLine(repo.GetWaitingForResponse());
+            break;
+        case "responded":
+            Console.WriteLine(repo.GetResponded());
+            break;
         default:
             Console.WriteLine("Felaktigt argument");
             break;
@@ -48,6 +58,9 @@ else if (args.Length == 2)
             break;
         case "response":
             repo.SetResponse(args[1], Utils.GetResponse);
+            break;
+        case "contacted":
+            repo.SetContacted(args[1]);
             break;
         default:
             Console.WriteLine("Felaktigt argument");

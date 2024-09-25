@@ -15,33 +15,87 @@ public class Repository
 
     public void Add(Company company)
     {
-        foreach (var savedCompany in _companies)
+        if (_companies.Where(x => x.CompanyName == company.CompanyName).Count() != 0)
         {
-            if (savedCompany.CompanyName == company.CompanyName)
-            {
-                return;
-            }
+            return;
         }
-
-        _companies.Add(company);
 
         File.AppendAllLines(_path, [CsvSerialize(company)]);
     }
 
     public void Remove(string companyName)
     {
-        foreach (var company in _companies)
-        {
-            if (company.CompanyName == companyName)
-            {
-                _companies.Remove(company);
-                break;
-            }
-        }
+        _companies = _companies.Where(x => x.CompanyName != companyName).ToList();
 
         List<string> companies = _companies.Select(x => CsvSerialize(x)).ToList();
-
         File.WriteAllLines(_path, companies);
+    }
+
+    public string GetResponded()
+    {
+        Console.Clear();
+        StringBuilder sb = new();
+
+        var companies = _companies.OrderByDescending(x => x.Intrest)
+                .Where(x => x.Response != string.Empty);
+
+        foreach (var company in companies)
+        {
+            sb.Append(company.ToString());
+        }
+
+        if (sb.Length == 0)
+        {
+            return "There is no Companies that has given a response";
+        }
+
+        return sb.ToString();
+    }
+
+    public string GetWaitingForResponse()
+    {
+        Console.Clear();
+        StringBuilder sb = new();
+
+        var companies = _companies.OrderByDescending(x => x.Intrest)
+                .Where(x => x.Contacted == true && x.Response == string.Empty);
+
+        foreach (var company in companies)
+        {
+            sb.Append(company.ToString());
+        }
+
+        if (sb.Length == 0)
+        {
+            return "Not waiting for a response from any company";
+        }
+
+        return sb.ToString();
+    }
+
+    public void SetContacted(string companyName)
+    {
+        if (_companies.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var company in _companies)
+        {
+            if (company.CompanyName == companyName && company.Contacted == false)
+            {
+                Company contacted = new(
+                        company.CompanyName,
+                        company.PhoneNumber,
+                        company.Website,
+                        company.Focus,
+                        company.Location,
+                        company.Intrest,
+                        true);
+                Remove(companyName);
+                Add(contacted);
+            }
+        }
     }
 
     public void SetResponse(string companyName, Func<string> method)
@@ -50,16 +104,22 @@ public class Repository
         {
             if (company.CompanyName == companyName)
             {
-                Company WithRespone = new(
+                if (company.Contacted == false)
+                {
+                    return;
+                }
+
+                Company withRespone = new(
                         company.CompanyName,
                         company.PhoneNumber,
                         company.Website,
                         company.Focus,
                         company.Location,
                         company.Intrest,
+                        company.Contacted,
                         method());
                 Remove(companyName);
-                Add(WithRespone);
+                Add(withRespone);
                 break;
             }
         }
@@ -115,16 +175,24 @@ public class Repository
 
     private string CsvSerialize(Company company)
     {
-        if (company.Response == string.Empty)
+        if (company.Contacted == false)
         {
             return $"{company.CompanyName},{company.PhoneNumber}," +
             $"{company.Website},{company.Focus},{company.Location}," +
             $"{company.Intrest}";
         }
-
-        return $"{company.CompanyName},{company.PhoneNumber}," +
-            $"{company.Website},{company.Focus},{company.Location}," +
-            $"{company.Intrest},{company.Response}";
+        else if (company.Response == string.Empty)
+        {
+            return $"{company.CompanyName},{company.PhoneNumber}," +
+                $"{company.Website},{company.Focus},{company.Location}," +
+                $"{company.Intrest},{company.Contacted}";
+        }
+        else
+        {
+            return $"{company.CompanyName},{company.PhoneNumber}," +
+                $"{company.Website},{company.Focus},{company.Location}," +
+                $"{company.Intrest},{company.Contacted},{company.Response}";
+        }
     }
 
     private Company CsvDeserialize(string company)
@@ -134,9 +202,13 @@ public class Repository
         {
             return new Company(data[0], data[1], data[2], data[3], data[4], int.Parse(data[5]));
         }
+        else if (data.Length == 7)
+        {
+            return new Company(data[0], data[1], data[2], data[3], data[4], int.Parse(data[5]), true);
+        }
         else
         {
-            return new Company(data[0], data[1], data[2], data[3], data[4], int.Parse(data[5]), data[6]);
+            return new Company(data[0], data[1], data[2], data[3], data[4], int.Parse(data[5]), true, data[7]);
         }
     }
 }
