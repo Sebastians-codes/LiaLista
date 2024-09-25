@@ -6,6 +6,7 @@ string companyName;
 if (args.Length == 0)
 {
     Console.WriteLine(repo.GetAll());
+    Console.WriteLine("flist help     to get se all methods available");
     return;
 }
 
@@ -40,6 +41,25 @@ if (args.Length == 1)
             break;
         case "responded":
             Console.WriteLine(repo.GetResponded());
+            break;
+        case "help":
+            Console.Clear();
+            Console.WriteLine(@"Methods to use - flist 'method'
+add - adds a new company to the list.
+get - gets a company stored in the database.
+all or flist only - get all companies and info stored in the database.
+remove - remove a company in the database.
+contacted - Mark company as contacted and waiting for response.
+response - Sets contacted to recieved response and lets you add a response field.
+waiting - gets all companies that hasnt given a response.
+responded - gets all companies that has responded.
+help - shows the help menu.
+
+Extra Functionality Case sensitive.
+get 'Company name' - gets you the company.
+remove 'Company name' - removes the company from the database.
+contacted 'Company name' - Marks the company waiting for response.
+response 'Company name' - Marks the company recieved response and lets you add a response.");
             break;
         default:
             Console.WriteLine("Felaktigt argument");
