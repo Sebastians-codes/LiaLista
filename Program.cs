@@ -1,9 +1,31 @@
-﻿// Cli för att skapa en lista av intressanta företag.
-// Företags namn, Nummer, Hemsida, Orientering, Ort, Intresse.
-using LiaLista;
+﻿using LiaLista;
 
-Repository repo = new("companies.csv");
+Repository repo = new("/home/zerq/Source/SUVNET24/LiaLista/companies.csv");
+string companyName;
 
-//repo.Add(CompanyFactory.Make());
+if (args.Length == 0)
+{
+    Console.WriteLine(repo.GetAll());
+    return;
+}
 
-Console.WriteLine(repo.GetAll());
+switch (args[0])
+{
+    case "add":
+        repo.Add(CompanyFactory.Make());
+        break;
+    case "get":
+        companyName = Utils.GetString("Företags namn: ->> ");
+        Console.WriteLine(repo.GetCompany(companyName));
+        break;
+    case "all":
+        Console.WriteLine(repo.GetAll());
+        break;
+    case "remove":
+        companyName = Utils.GetString("Företags namn: ->> ");
+        repo.Remove(companyName);
+        break;
+    default:
+        Console.WriteLine("Felaktigt argument");
+        break;
+}

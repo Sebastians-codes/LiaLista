@@ -2,15 +2,19 @@ using System.Text;
 
 namespace LiaLista;
 
-public class Repository(string path)
+public class Repository
 {
-    private readonly string _path = path;
+    private readonly string _path;
     private List<Company> _companies = [];
+
+    public Repository(string path)
+    {
+        _path = path;
+        InitializeDatabase();
+    }
 
     public void Add(Company company)
     {
-        InitializeDatabase();
-
         foreach (var savedCompany in _companies)
         {
             if (savedCompany.CompanyName == company.CompanyName)
@@ -42,8 +46,6 @@ public class Repository(string path)
 
     public string GetCompany(string companyName)
     {
-        InitializeDatabase();
-
         foreach (var company in _companies)
         {
             if (company.CompanyName == companyName)
@@ -57,8 +59,6 @@ public class Repository(string path)
 
     public string GetAll()
     {
-        InitializeDatabase();
-
         StringBuilder sb = new();
 
         foreach (var company in _companies)
@@ -97,5 +97,4 @@ public class Repository(string path)
 
         return new Company(data[0], data[1], data[2], data[3], data[4], int.Parse(data[5]));
     }
-
 }
