@@ -39,9 +39,30 @@ public class Repository
             }
         }
 
-        string[] companies = _companies.Select(x => CsvSerialize(x)).ToArray();
+        List<string> companies = _companies.Select(x => CsvSerialize(x)).ToList();
 
         File.WriteAllLines(_path, companies);
+    }
+
+    public void SetResponse(string companyName, Func<string> method)
+    {
+        foreach (var company in _companies)
+        {
+            if (company.CompanyName == companyName)
+            {
+                Company WithRespone = new(
+                        company.CompanyName,
+                        company.PhoneNumber,
+                        company.Website,
+                        company.Focus,
+                        company.Location,
+                        company.Intrest,
+                        method());
+                Remove(companyName);
+                Add(WithRespone);
+                break;
+            }
+        }
     }
 
     public string GetCompany(string companyName)
@@ -86,15 +107,30 @@ public class Repository
         _companies = companies.Select(x => CsvDeserialize(x)).ToList();
     }
 
-    private string CsvSerialize(Company company) =>
-        $"{company.CompanyName},{company.PhoneNumber}," +
-        $"{company.Website},{company.Focus},{company.Location}," +
-        $"{company.Intrest}";
+    private string CsvSerialize(Company company)
+    {
+        if (company.Response == string.Empty)
+        {
+            return $"{company.CompanyName},{company.PhoneNumber}," +
+            $"{company.Website},{company.Focus},{company.Location}," +
+            $"{company.Intrest}";
+        }
+
+        return $"{company.CompanyName},{company.PhoneNumber}," +
+            $"{company.Website},{company.Focus},{company.Location}," +
+            $"{company.Intrest},{company.Response}";
+    }
 
     private Company CsvDeserialize(string company)
     {
         string[] data = company.Split(",");
-
-        return new Company(data[0], data[1], data[2], data[3], data[4], int.Parse(data[5]));
+        if (data.Length == 6)
+        {
+            return new Company(data[0], data[1], data[2], data[3], data[4], int.Parse(data[5]));
+        }
+        else
+        {
+            return new Company(data[0], data[1], data[2], data[3], data[4], int.Parse(data[5]), data[6]);
+        }
     }
 }

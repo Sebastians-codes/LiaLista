@@ -25,6 +25,10 @@ switch (args[0])
         companyName = Utils.GetString("Företags namn: ->> ");
         repo.Remove(companyName);
         break;
+    case "response":
+        companyName = Utils.GetString("Företags namn: ->> ");
+        repo.SetResponse(companyName, Utils.GetResponse);
+        break;
     default:
         Console.WriteLine("Felaktigt argument");
         break;
