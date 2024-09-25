@@ -1,3 +1,4 @@
+using System.Text;
 namespace LiaLista;
 
 public static class Utils
@@ -42,6 +43,24 @@ public static class Utils
 
             Console.Clear();
             Console.WriteLine(errorMessage);
+        } while (true);
+    }
+
+    public static string GetResponse()
+    {
+        ConsoleKeyInfo key;
+        StringBuilder sb = new();
+        Console.Clear();
+        do
+        {
+            Console.Write("Esc för att avsluta. Skriv Företagets respons här: ->> ");
+
+            if (sb.Length > 0)
+            {
+                Console.Write(sb.ToString());
+            }
+
+            key = Console.ReadKey();
         } while (true);
     }
 }
