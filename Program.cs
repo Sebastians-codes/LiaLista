@@ -1,6 +1,6 @@
 ﻿using LiaLista;
 
-Repository repo = new("/home/zerq/Source/SUVNET24/LiaLista/companies.csv");
+Repository repo = new(Path.Join(Environment.SpecialFolder.Desktop.ToString(), "LiaLista", "companies.csv"));
 
 string Help()
 {

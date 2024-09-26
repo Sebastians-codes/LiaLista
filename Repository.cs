@@ -10,6 +10,7 @@ public class Repository
     public Repository(string path)
     {
         _path = path;
+        CreateDataFolder();
         InitializeDatabase();
     }
 
@@ -238,5 +239,18 @@ public class Repository
         {
             return new Company(data[0], data[1], data[2], data[3], data[4], int.Parse(data[5]), true, data[7]);
         }
+    }
+
+    private void CreateDataFolder()
+    {
+        var path = _path.Split("/");
+        string homeDir = string.Join("/", path[..2]);
+
+        if (Directory.Exists(homeDir))
+        {
+            return;
+        }
+
+        Directory.CreateDirectory(homeDir);
     }
 }
