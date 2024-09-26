@@ -6,7 +6,7 @@ string companyName;
 if (args.Length == 0)
 {
     Console.WriteLine(repo.GetAll());
-    Console.WriteLine("flist help     to get se all methods available");
+    Console.WriteLine("flist help to get se all methods available");
     return;
 }
 
@@ -55,7 +55,7 @@ waiting - gets all companies that hasnt given a response.
 responded - gets all companies that has responded.
 help - shows the help menu.
 
-Extra Functionality Case sensitive.
+Extra Functionality.
 get 'Company name' - gets you the company.
 remove 'Company name' - removes the company from the database.
 contacted 'Company name' - Marks the company waiting for response.
