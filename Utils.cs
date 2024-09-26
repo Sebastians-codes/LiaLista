@@ -17,6 +17,7 @@ public static class Utils
                 continue;
             }
 
+            input = input.Replace(',', '.');
             return $"{char.ToUpper(input[0])}{input[1..]}";
 
         } while (true);

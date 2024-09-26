@@ -51,6 +51,7 @@ if (args.Length == 1)
 else if (args.Length == 2 && args[1].Length > 1)
 {
     string input = $"{char.ToUpper(args[1][0])}{args[1][1..].ToLower()}";
+    input = input.Replace(',', '.');
     string returnString = args[0] switch
     {
         "get" => repo.GetCompany(input),
