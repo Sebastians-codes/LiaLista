@@ -26,7 +26,7 @@ response 'Company name' - Marks the company recieved response and lets you add a
 if (args.Length == 0)
 {
     Console.WriteLine(repo.GetAll());
-    Console.WriteLine("flist help to get se all methods available");
+    Console.WriteLine("flist help to se all methods available");
     return;
 }
 
