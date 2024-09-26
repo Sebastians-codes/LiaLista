@@ -13,22 +13,37 @@ public class Repository
         InitializeDatabase();
     }
 
-    public void Add(Company company)
+    public string Add(Company company)
     {
         if (_companies.Where(x => x.CompanyName == company.CompanyName).Count() != 0)
         {
-            return;
+            return "There is already a company with that name registered.";
         }
 
         File.AppendAllLines(_path, [CsvSerialize(company)]);
+
+        return "Company successfully added!";
     }
 
-    public void Remove(string companyName)
+    public string Remove(string companyName)
     {
+        string returnString = "No company with that name in the Database.";
+
+        if (_companies.Where(x => x.CompanyName == companyName).Count() > 0)
+        {
+            returnString = $"{companyName} Has been removed.";
+        }
+        else
+        {
+            return returnString;
+        }
+
         _companies = _companies.Where(x => x.CompanyName != companyName).ToList();
 
         List<string> companies = _companies.Select(x => CsvSerialize(x)).ToList();
         File.WriteAllLines(_path, companies);
+
+        return returnString;
     }
 
     public string GetResponded()
@@ -73,17 +88,22 @@ public class Repository
         return sb.ToString();
     }
 
-    public void SetContacted(string companyName)
+    public string SetContacted(string companyName)
     {
         if (_companies.Count == 0)
         {
-            return;
+            return "There is no companies in the Database.";
         }
 
         foreach (var company in _companies)
         {
-            if (company.CompanyName == companyName && company.Contacted == false)
+            if (company.CompanyName == companyName)
             {
+                if (company.Contacted != false)
+                {
+                    return "This company has already been set to contacted.";
+                }
+
                 Company contacted = new(
                         company.CompanyName,
                         company.PhoneNumber,
@@ -94,11 +114,15 @@ public class Repository
                         true);
                 Remove(companyName);
                 Add(contacted);
+
+                return $"{companyName} has been marked as contacted";
             }
         }
+
+        return $"There was no company with the name {companyName}";
     }
 
-    public void SetResponse(string companyName, Func<string> method)
+    public string SetResponse(string companyName, Func<string> method)
     {
         foreach (var company in _companies)
         {
@@ -106,7 +130,8 @@ public class Repository
             {
                 if (company.Contacted == false)
                 {
-                    return;
+                    return "You have not set this company as contacted yet. please mark it as contacted before" +
+                        " setting a response.";
                 }
 
                 Company withRespone = new(
@@ -120,9 +145,12 @@ public class Repository
                         method());
                 Remove(companyName);
                 Add(withRespone);
-                break;
+
+                return "Company response added";
             }
         }
+
+        return $"There was no company with the name {companyName}";
     }
 
     public string GetCompany(string companyName)
@@ -135,7 +163,7 @@ public class Repository
             }
         }
 
-        return "";
+        return $"There was no company with the name {companyName} in the database.";
     }
 
     public string GetAll()

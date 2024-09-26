@@ -15,7 +15,7 @@ if (args.Length == 1)
     switch (args[0])
     {
         case "add":
-            repo.Add(CompanyFactory.Make());
+            Console.WriteLine(repo.Add(CompanyFactory.Make()));
             break;
         case "get":
             companyName = Utils.GetString("Företags namn: ->> ");
@@ -26,15 +26,15 @@ if (args.Length == 1)
             break;
         case "remove":
             companyName = Utils.GetString("Företags namn: ->> ");
-            repo.Remove(companyName);
+            Console.WriteLine(repo.Remove(companyName));
             break;
         case "response":
             companyName = Utils.GetString("Företags namn: ->> ");
-            repo.SetResponse(companyName, Utils.GetResponse);
+            Console.WriteLine(repo.SetResponse(companyName, Utils.GetResponse));
             break;
         case "contacted":
             companyName = Utils.GetString("Företags namn: ->> ");
-            repo.SetContacted(companyName);
+            Console.WriteLine(repo.SetContacted(companyName));
             break;
         case "waiting":
             Console.WriteLine(repo.GetWaitingForResponse());
@@ -66,21 +66,22 @@ response 'Company name' - Marks the company recieved response and lets you add a
             break;
     }
 }
-else if (args.Length == 2)
+else if (args.Length == 2 && args[1].Length > 1)
 {
+    string input = $"{char.ToUpper(args[1][0])}{args[1][1..].ToLower()}";
     switch (args[0])
     {
         case "get":
-            Console.WriteLine(repo.GetCompany(args[1]));
+            Console.WriteLine(repo.GetCompany(input));
             break;
         case "remove":
-            repo.Remove(args[1]);
+            Console.WriteLine(repo.Remove(input));
             break;
         case "response":
-            repo.SetResponse(args[1], Utils.GetResponse);
+            Console.WriteLine(repo.SetResponse(input, Utils.GetResponse));
             break;
         case "contacted":
-            repo.SetContacted(args[1]);
+            Console.WriteLine(repo.SetContacted(input));
             break;
         default:
             Console.WriteLine("Felaktigt argument");
