@@ -78,6 +78,10 @@ Teknologier: {Focus}.
 
 Intresse Rating: {Intrest}.
 
-Kontaktat: {(Contacted ? Response != string.Empty ? "Har fått Respons från företaget." : "Väntar på Respons från företaget" : "Har inte kontaktat företaget.")}.
+Kontaktat: {(Contacted
+                ? Response != string.Empty
+                    ? "Har fått Respons från företaget."
+                    : "Väntar på Respons från företaget"
+                : "Har inte kontaktat företaget.")}.
 {(Response == String.Empty ? "" : $"\nResponse: {Response}\n")}";
 }
