@@ -1,6 +1,6 @@
 ﻿using LiaLista;
 
-Repository repo = new(Path.Join(Environment.SpecialFolder.Desktop.ToString(), "LiaLista", "companies.csv"));
+MsSqlRepo repo = new();
 
 string Help()
 {
@@ -39,7 +39,7 @@ if (args.Length == 1)
         "all" => repo.GetAll(),
         "remove" => repo.Remove(Utils.GetString("Företags namn: ->> ")),
         "contacted" => repo.SetContacted(Utils.GetString("Företags namn: ->> ")),
-        "response" => repo.SetResponse(Utils.GetString("Företags namn: ->> "), Utils.GetResponse),
+        "response" => repo.SetResponse(Utils.GetString("Företags namn: ->> "), Utils.GetResponse()),
         "waiting" => repo.GetWaitingForResponse(),
         "responded" => repo.GetResponded(),
         "help" => Help(),
@@ -57,7 +57,7 @@ else if (args.Length == 2 && args[1].Length > 1)
         "get" => repo.GetCompany(input),
         "remove" => repo.Remove(input),
         "contacted" => repo.SetContacted(input),
-        "response" => repo.SetResponse(input, Utils.GetResponse),
+        "response" => repo.SetResponse(input, Utils.GetResponse()),
         _ => "Felaktigt argument"
     };
 

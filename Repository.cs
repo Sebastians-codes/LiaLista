@@ -2,7 +2,7 @@ using System.Text;
 
 namespace LiaLista;
 
-public class Repository
+public class Repository : IRepository
 {
     private readonly string _path;
     private List<Company> _companies = [];
@@ -123,7 +123,7 @@ public class Repository
         return $"There was no company with the name {companyName}";
     }
 
-    public string SetResponse(string companyName, Func<string> method)
+    public string SetResponse(string companyName, string response)
     {
         foreach (var company in _companies)
         {
@@ -143,7 +143,7 @@ public class Repository
                         company.Location,
                         company.Intrest,
                         company.Contacted,
-                        method());
+                        response);
                 Remove(companyName);
                 Add(withRespone);
 
