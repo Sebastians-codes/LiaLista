@@ -2,12 +2,12 @@ using System.Text;
 
 namespace LiaLista;
 
-public class Repository : IRepository
+public class CsvRepo : IRepository
 {
     private readonly string _path;
     private List<Company> _companies = [];
 
-    public Repository(string path)
+    public CsvRepo(string path)
     {
         _path = path;
         CreateDataFolder();

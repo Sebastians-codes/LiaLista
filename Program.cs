@@ -1,6 +1,8 @@
 ﻿using LiaLista;
 
-MsSqlRepo repo = new();
+SqlRepo repoBuilder = new(SqlType.PostgreSql);
+var repo = repoBuilder.Repository();
+
 
 string Help()
 {

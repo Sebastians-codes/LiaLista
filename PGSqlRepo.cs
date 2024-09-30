@@ -1,13 +1,13 @@
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using System.Text;
 
 namespace LiaLista;
 
-public class MsSqlRepo : IRepository
+public class PGSqlRepo : IRepository
 {
     private string _connectionString;
 
-    public MsSqlRepo(string connectionString)
+    public PGSqlRepo(string connectionString)
     {
         _connectionString = connectionString;
     }
@@ -16,8 +16,8 @@ public class MsSqlRepo : IRepository
     {
         StringBuilder sb = new();
 
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(
+        using var connection = new NpgsqlConnection(_connectionString);
+        using var command = new NpgsqlCommand(
                 "SELECT Name, Number, Website, Focus, Location, Intrest, Contacted, Response" +
                 " FROM Company ORDER BY Intrest DESC", connection);
         try
@@ -34,13 +34,12 @@ public class MsSqlRepo : IRepository
                 string location = reader.GetString(reader.GetOrdinal("Location"));
                 int intrest = reader.GetInt32(reader.GetOrdinal("Intrest"));
                 bool contacted = reader.GetBoolean(reader.GetOrdinal("Contacted"));
-                string? response = reader.IsDBNull(reader.GetOrdinal("Response")) ?
-                    string.Empty : reader.GetString(reader.GetOrdinal("Response"));
+                string response = reader.GetString(reader.GetOrdinal("Response"));
                 Company company = new(name, number, website, focus, location, intrest, contacted, response);
                 sb.Append(company.ToString());
             }
         }
-        catch (SqlException e)
+        catch (PostgresException e)
         {
             Console.WriteLine(e.Message);
         }
@@ -55,8 +54,9 @@ public class MsSqlRepo : IRepository
 
     public string GetCompany(string companyName)
     {
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand($"SELECT TOP 1 * FROM Company WHERE Name = '{companyName}'", connection);
+        using var connection = new NpgsqlConnection(_connectionString);
+        using var command = new NpgsqlCommand($"SELECT * FROM Company WHERE Name = '{companyName}' LIMIT 1", connection);
+
         try
         {
             connection.Open();
@@ -77,7 +77,7 @@ public class MsSqlRepo : IRepository
                 return company.ToString();
             }
         }
-        catch (SqlException e)
+        catch (PostgresException e)
         {
             Console.WriteLine(e.Message);
         }
@@ -85,10 +85,39 @@ public class MsSqlRepo : IRepository
         return "There where no company with that name";
     }
 
+    public string Add(Company company)
+    {
+        using var connection = new NpgsqlConnection(_connectionString);
+        using var command = new NpgsqlCommand(
+                "INSERT INTO Company (Name, Number, Website, Focus, Location, Intrest)" +
+                "VALUES (@Name, @Number, @Website, @Focus, @Location, @Intrest)", connection);
+
+        command.Parameters.AddWithValue("@Name", company.CompanyName);
+        command.Parameters.AddWithValue("@Number", company.PhoneNumber);
+        command.Parameters.AddWithValue("@Website", company.Website);
+        command.Parameters.AddWithValue("@Focus", company.Focus);
+        command.Parameters.AddWithValue("@Location", company.Location);
+        command.Parameters.AddWithValue("@Intrest", company.Intrest);
+
+        try
+        {
+            connection.Open();
+            command.ExecuteNonQuery();
+            return @$"Company Successfully added.
+
+{company.ToString()}";
+        }
+        catch (PostgresException e)
+        {
+            Console.WriteLine(e.Message);
+        }
+        return "There was already a Company with that name";
+    }
+
     public string SetResponse(string companyName, string response)
     {
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(
+        using var connection = new NpgsqlConnection(_connectionString);
+        using var command = new NpgsqlCommand(
                 "UPDATE Company SET Response = @Value WHERE Name = @CompanyName", connection);
 
         command.Parameters.AddWithValue("@Value", response);
@@ -100,7 +129,7 @@ public class MsSqlRepo : IRepository
             command.ExecuteNonQuery();
             return "Company has been set to Responded";
         }
-        catch (SqlException e)
+        catch (PostgresException e)
         {
             Console.WriteLine(e.Message);
         }
@@ -109,11 +138,11 @@ public class MsSqlRepo : IRepository
 
     public string SetContacted(string companyName)
     {
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(
+        using var connection = new NpgsqlConnection(_connectionString);
+        using var command = new NpgsqlCommand(
                 "UPDATE Company SET Contacted = @Value WHERE Name = @CompanyName", connection);
 
-        command.Parameters.AddWithValue("@Value", 1);
+        command.Parameters.AddWithValue("@Value", true);
         command.Parameters.AddWithValue("@CompanyName", companyName);
 
         try
@@ -122,7 +151,7 @@ public class MsSqlRepo : IRepository
             command.ExecuteNonQuery();
             return "Company has been set to Contacted";
         }
-        catch (SqlException e)
+        catch (PostgresException e)
         {
             Console.WriteLine(e.Message);
         }
@@ -133,10 +162,10 @@ public class MsSqlRepo : IRepository
     {
         StringBuilder sb = new();
 
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(
+        using var connection = new NpgsqlConnection(_connectionString);
+        using var command = new NpgsqlCommand(
                 "SELECT * FROM Company" +
-                " WHERE Contacted = 1 AND Response IS NULL" +
+                " WHERE Contacted = true AND Response = ''" +
                 " ORDER BY Intrest DESC", connection);
         try
         {
@@ -158,7 +187,7 @@ public class MsSqlRepo : IRepository
                 sb.Append(company.ToString());
             }
         }
-        catch (SqlException e)
+        catch (PostgresException e)
         {
             Console.WriteLine(e.Message);
         }
@@ -171,8 +200,8 @@ public class MsSqlRepo : IRepository
     {
         StringBuilder sb = new();
 
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(
+        using var connection = new NpgsqlConnection(_connectionString);
+        using var command = new NpgsqlCommand(
                 "SELECT * FROM Company" +
                 " WHERE Response IS NOT NULL" +
                 " ORDER BY Intrest", connection);
@@ -196,7 +225,7 @@ public class MsSqlRepo : IRepository
                 sb.Append(company.ToString());
             }
         }
-        catch (SqlException e)
+        catch (PostgresException e)
         {
             Console.WriteLine(e.Message);
         }
@@ -206,8 +235,8 @@ public class MsSqlRepo : IRepository
 
     public string Remove(string companyName)
     {
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(
+        using var connection = new NpgsqlConnection(_connectionString);
+        using var command = new NpgsqlCommand(
                 "DELETE FROM Company WHERE Name = @CompanyName", connection);
 
         command.Parameters.AddWithValue("@CompanyName", companyName);
@@ -218,36 +247,7 @@ public class MsSqlRepo : IRepository
             command.ExecuteNonQuery();
             return "Company has been removed";
         }
-        catch (SqlException e)
-        {
-            Console.WriteLine(e.Message);
-        }
-        return "There was already a Company with that name";
-    }
-
-    public string Add(Company company)
-    {
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(
-                "INSERT INTO Company (Name, Number, Website, Focus, Location, Intrest)" +
-                "VALUES (@Name, @Number, @Website, @Focus, @Location, @Intrest)", connection);
-
-        command.Parameters.AddWithValue("@Name", company.CompanyName);
-        command.Parameters.AddWithValue("@Number", company.PhoneNumber);
-        command.Parameters.AddWithValue("@Website", company.Website);
-        command.Parameters.AddWithValue("@Focus", company.Focus);
-        command.Parameters.AddWithValue("@Location", company.Location);
-        command.Parameters.AddWithValue("@Intrest", company.Intrest);
-
-        try
-        {
-            connection.Open();
-            command.ExecuteNonQuery();
-            return @$"Company Successfully added.
-
-{company.ToString()}";
-        }
-        catch (SqlException e)
+        catch (PostgresException e)
         {
             Console.WriteLine(e.Message);
         }
