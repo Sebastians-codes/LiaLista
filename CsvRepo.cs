@@ -2,7 +2,7 @@ using System.Text;
 
 namespace LiaLista;
 
-public class CsvRepo : IRepository
+public class CsvRepo
 {
     private readonly string _path;
     private List<Company> _companies = [];

@@ -1,8 +1,7 @@
 ﻿using LiaLista;
+using LiaLista.SqlDatabases;
 
-SqlRepo repoBuilder = new(SqlType.PostgreSql);
-var repo = repoBuilder.Repository();
-
+SqlRepo repo = new(SqlType.PostgreSql);
 
 string Help()
 {

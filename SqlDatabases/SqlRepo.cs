@@ -1,25 +1,93 @@
-using Microsoft.Data.SqlClient;
+using System.Data.Common;
 using System.Text;
 
-namespace LiaLista;
+namespace LiaLista.SqlDatabases;
 
-public class MsSqlRepo : IRepository
+public class SqlRepo
 {
     private string _connectionString;
+    private ISqlDatabase _database;
 
-    public MsSqlRepo(string connectionString)
+    public SqlRepo(SqlType sqlType)
     {
-        _connectionString = connectionString;
+        _database = GetDatabase(sqlType);
+
+        if (sqlType != SqlType.Sqlite)
+        {
+            _connectionString = CreateConnectionString();
+        }
+        else
+        {
+            _connectionString = $"Data Source={Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "lialista.db")}";
+
+            if (File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "lialista.db")))
+            {
+                return;
+            }
+
+            using var connection = _database.CreateConnection(_connectionString);
+            connection.Open();
+            string queryString = @"
+                CREATE TABLE IF NOT EXISTS Company (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    Name TEXT NOT NULL,
+                    Number TEXT,
+                    Website TEXT,
+                    Focus TEXT,
+                    Location TEXT,
+                    Intrest INTEGER,
+                    Contacted INTEGER DEFAULT 0,
+                    Response TEXT DEFAULT ''
+                );";
+            using var command = _database.CreateCommand(queryString, connection);
+            command.ExecuteNonQuery();
+        }
+
+        if (sqlType == SqlType.MsSql)
+        {
+            _connectionString += " -C";
+        }
+    }
+
+    private ISqlDatabase GetDatabase(SqlType sqlType)
+    {
+        return sqlType switch
+        {
+            SqlType.PostgreSql => new PostgreSql(),
+            SqlType.MsSql => new MsSql(),
+            SqlType.Sqlite => new SqLite(),
+        };
+    }
+
+    private string CreateConnectionString()
+    {
+        if (!File.Exists(".env"))
+        {
+            throw new FileNotFoundException();
+        }
+
+        StringBuilder sb = new();
+        var parts = File.ReadAllLines(".env");
+        var type = _database.GetConnectionStringParts();
+
+        for (int i = 0; i < type.Length; i++)
+        {
+            sb.Append($"{type[i]} = {parts[i]}");
+        }
+
+        return sb.ToString();
     }
 
     public string GetAll()
     {
         StringBuilder sb = new();
 
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(
-                "SELECT Name, Number, Website, Focus, Location, Intrest, Contacted, Response" +
-                " FROM Company ORDER BY Intrest DESC", connection);
+        string queryString = "SELECT Name, Number, Website, Focus, Location, Intrest, Contacted, Response" +
+                                " FROM Company ORDER BY Intrest DESC";
+
+        using DbConnection connection = _database.CreateConnection(_connectionString);
+        using DbCommand command = _database.CreateCommand(queryString, connection);
+
         try
         {
             connection.Open();
@@ -34,13 +102,12 @@ public class MsSqlRepo : IRepository
                 string location = reader.GetString(reader.GetOrdinal("Location"));
                 int intrest = reader.GetInt32(reader.GetOrdinal("Intrest"));
                 bool contacted = reader.GetBoolean(reader.GetOrdinal("Contacted"));
-                string? response = reader.IsDBNull(reader.GetOrdinal("Response")) ?
-                    string.Empty : reader.GetString(reader.GetOrdinal("Response"));
+                string response = reader.GetString(reader.GetOrdinal("Response"));
                 Company company = new(name, number, website, focus, location, intrest, contacted, response);
                 sb.Append(company.ToString());
             }
         }
-        catch (SqlException e)
+        catch (DbException e)
         {
             Console.WriteLine(e.Message);
         }
@@ -55,8 +122,11 @@ public class MsSqlRepo : IRepository
 
     public string GetCompany(string companyName)
     {
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand($"SELECT TOP 1 * FROM Company WHERE Name = '{companyName}'", connection);
+        string queryString = _database.GetCommands()["Get Company"];
+        queryString = queryString.Replace("companyName", $"{companyName}");
+        using var connection = _database.CreateConnection(_connectionString);
+        using var command = _database.CreateCommand(queryString, connection);
+
         try
         {
             connection.Open();
@@ -77,7 +147,7 @@ public class MsSqlRepo : IRepository
                 return company.ToString();
             }
         }
-        catch (SqlException e)
+        catch (DbException e)
         {
             Console.WriteLine(e.Message);
         }
@@ -85,14 +155,43 @@ public class MsSqlRepo : IRepository
         return "There where no company with that name";
     }
 
+    public string Add(Company company)
+    {
+        using var connection = _database.CreateConnection(_connectionString);
+        using var command = _database.CreateCommand(
+                "INSERT INTO Company (Name, Number, Website, Focus, Location, Intrest)" +
+                "VALUES (@Name, @Number, @Website, @Focus, @Location, @Intrest)", connection);
+
+        command.Parameters.Add(CreateParameter(command, "@Name", company.CompanyName));
+        command.Parameters.Add(CreateParameter(command, "@Number", company.PhoneNumber));
+        command.Parameters.Add(CreateParameter(command, "@Website", company.Website));
+        command.Parameters.Add(CreateParameter(command, "@Focus", company.Focus));
+        command.Parameters.Add(CreateParameter(command, "@Location", company.Location));
+        command.Parameters.Add(CreateParameter(command, "@Intrest", company.Intrest));
+
+        try
+        {
+            connection.Open();
+            command.ExecuteNonQuery();
+            return @$"Company Successfully added.
+
+{company.ToString()}";
+        }
+        catch (DbException e)
+        {
+            Console.WriteLine(e.Message);
+        }
+        return "There was already a Company with that name";
+    }
+
     public string SetResponse(string companyName, string response)
     {
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(
+        using var connection = _database.CreateConnection(_connectionString);
+        using var command = _database.CreateCommand(
                 "UPDATE Company SET Response = @Value WHERE Name = @CompanyName", connection);
 
-        command.Parameters.AddWithValue("@Value", response);
-        command.Parameters.AddWithValue("@CompanyName", companyName);
+        command.Parameters.Add(CreateParameter(command, "@Value", response));
+        command.Parameters.Add(CreateParameter(command, "@CompanyName", companyName));
 
         try
         {
@@ -100,7 +199,7 @@ public class MsSqlRepo : IRepository
             command.ExecuteNonQuery();
             return "Company has been set to Responded";
         }
-        catch (SqlException e)
+        catch (DbException e)
         {
             Console.WriteLine(e.Message);
         }
@@ -109,12 +208,12 @@ public class MsSqlRepo : IRepository
 
     public string SetContacted(string companyName)
     {
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(
+        using var connection = _database.CreateConnection(_connectionString);
+        using var command = _database.CreateCommand(
                 "UPDATE Company SET Contacted = @Value WHERE Name = @CompanyName", connection);
 
-        command.Parameters.AddWithValue("@Value", 1);
-        command.Parameters.AddWithValue("@CompanyName", companyName);
+        command.Parameters.Add(CreateParameter(command, "@Value", true));
+        command.Parameters.Add(CreateParameter(command, "@CompanyName", companyName));
 
         try
         {
@@ -122,7 +221,7 @@ public class MsSqlRepo : IRepository
             command.ExecuteNonQuery();
             return "Company has been set to Contacted";
         }
-        catch (SqlException e)
+        catch (DbException e)
         {
             Console.WriteLine(e.Message);
         }
@@ -133,10 +232,10 @@ public class MsSqlRepo : IRepository
     {
         StringBuilder sb = new();
 
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(
+        using var connection = _database.CreateConnection(_connectionString);
+        using var command = _database.CreateCommand(
                 "SELECT * FROM Company" +
-                " WHERE Contacted = 1 AND Response IS NULL" +
+                " WHERE Contacted = true AND Response = ''" +
                 " ORDER BY Intrest DESC", connection);
         try
         {
@@ -158,7 +257,7 @@ public class MsSqlRepo : IRepository
                 sb.Append(company.ToString());
             }
         }
-        catch (SqlException e)
+        catch (DbException e)
         {
             Console.WriteLine(e.Message);
         }
@@ -171,10 +270,10 @@ public class MsSqlRepo : IRepository
     {
         StringBuilder sb = new();
 
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(
+        using var connection = _database.CreateConnection(_connectionString);
+        using var command = _database.CreateCommand(
                 "SELECT * FROM Company" +
-                " WHERE Response IS NOT NULL" +
+                " WHERE Response != ''" +
                 " ORDER BY Intrest", connection);
         try
         {
@@ -196,7 +295,7 @@ public class MsSqlRepo : IRepository
                 sb.Append(company.ToString());
             }
         }
-        catch (SqlException e)
+        catch (DbException e)
         {
             Console.WriteLine(e.Message);
         }
@@ -206,11 +305,11 @@ public class MsSqlRepo : IRepository
 
     public string Remove(string companyName)
     {
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(
+        using var connection = _database.CreateConnection(_connectionString);
+        using var command = _database.CreateCommand(
                 "DELETE FROM Company WHERE Name = @CompanyName", connection);
 
-        command.Parameters.AddWithValue("@CompanyName", companyName);
+        command.Parameters.Add(CreateParameter(command, "@CompanyName", companyName));
 
         try
         {
@@ -218,39 +317,18 @@ public class MsSqlRepo : IRepository
             command.ExecuteNonQuery();
             return "Company has been removed";
         }
-        catch (SqlException e)
+        catch (DbException e)
         {
             Console.WriteLine(e.Message);
         }
         return "There was already a Company with that name";
     }
 
-    public string Add(Company company)
+    private DbParameter CreateParameter(DbCommand command, string name, object value)
     {
-        using var connection = new SqlConnection(_connectionString);
-        using var command = new SqlCommand(
-                "INSERT INTO Company (Name, Number, Website, Focus, Location, Intrest)" +
-                "VALUES (@Name, @Number, @Website, @Focus, @Location, @Intrest)", connection);
-
-        command.Parameters.AddWithValue("@Name", company.CompanyName);
-        command.Parameters.AddWithValue("@Number", company.PhoneNumber);
-        command.Parameters.AddWithValue("@Website", company.Website);
-        command.Parameters.AddWithValue("@Focus", company.Focus);
-        command.Parameters.AddWithValue("@Location", company.Location);
-        command.Parameters.AddWithValue("@Intrest", company.Intrest);
-
-        try
-        {
-            connection.Open();
-            command.ExecuteNonQuery();
-            return @$"Company Successfully added.
-
-{company.ToString()}";
-        }
-        catch (SqlException e)
-        {
-            Console.WriteLine(e.Message);
-        }
-        return "There was already a Company with that name";
+        DbParameter parameter = command.CreateParameter();
+        parameter.ParameterName = name;
+        parameter.Value = value;
+        return parameter;
     }
 }
