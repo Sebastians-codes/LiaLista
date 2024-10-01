@@ -1,7 +1,7 @@
 ﻿using LiaLista;
 using LiaLista.SqlDatabases;
 
-SqlRepo repo = new(SqlType.PostgreSql);
+SqlRepo repo = new(SqlType.Sqlite);
 
 string Help()
 {

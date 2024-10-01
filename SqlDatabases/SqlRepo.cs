@@ -103,6 +103,7 @@ public class SqlRepo
                 int intrest = reader.GetInt32(reader.GetOrdinal("Intrest"));
                 bool contacted = reader.GetBoolean(reader.GetOrdinal("Contacted"));
                 string response = reader.GetString(reader.GetOrdinal("Response"));
+
                 Company company = new(name, number, website, focus, location, intrest, contacted, response);
                 sb.Append(company.ToString());
             }

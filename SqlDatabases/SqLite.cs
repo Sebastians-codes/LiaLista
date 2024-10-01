@@ -23,6 +23,5 @@ public class SqLite : ISqlDatabase
         {"Get Waiting","SELECT * FROM Company" +
                 " WHERE Contacted = true AND Response = ''" +
                 " ORDER BY Intrest DESC"},
-
     };
 }
