@@ -12,12 +12,12 @@ public struct Company
     public string Response { get; init; } = string.Empty;
 
     public Company(
-            string companyName,
-            string phoneNumber,
-            string website,
-            string focus,
-            string location,
-            int intrest)
+        string companyName,
+        string phoneNumber,
+        string website,
+        string focus,
+        string location,
+        int intrest)
     {
         CompanyName = companyName;
         PhoneNumber = phoneNumber;
@@ -28,13 +28,13 @@ public struct Company
     }
 
     public Company(
-                string companyName,
-                string phoneNumber,
-                string website,
-                string focus,
-                string location,
-                int intrest,
-                bool contacted)
+        string companyName,
+        string phoneNumber,
+        string website,
+        string focus,
+        string location,
+        int intrest,
+        bool contacted)
     {
         CompanyName = companyName;
         PhoneNumber = phoneNumber;
@@ -46,14 +46,14 @@ public struct Company
     }
 
     public Company(
-                string companyName,
-                string phoneNumber,
-                string website,
-                string focus,
-                string location,
-                int intrest,
-                bool contacted,
-                string response)
+        string companyName,
+        string phoneNumber,
+        string website,
+        string focus,
+        string location,
+        int intrest,
+        bool contacted,
+        string response)
     {
         CompanyName = companyName;
         PhoneNumber = phoneNumber;
@@ -65,23 +65,27 @@ public struct Company
         Response = response;
     }
 
-    public override string ToString() =>
-        @$"_________________________
-Företags namn: {CompanyName}.
+    public override string ToString()
+    {
+        return $"""
+                _________________________
+                Företags namn: {CompanyName}.
 
-Kontakt Uppgifter:
-Telefon Nummer: {PhoneNumber}.
-Hemsida: {Website}.
-Adress: {Location}.
+                Kontakt Uppgifter:
+                Telefon Nummer: {PhoneNumber}.
+                Hemsida: {Website}.
+                Adress: {Location}.
 
-Teknologier: {Focus}.
+                Teknologier: {Focus}.
 
-Intresse Rating: {Intrest}.
+                Intresse Rating: {Intrest}.
 
-Kontaktat: {(Contacted
-                ? Response != string.Empty
-                    ? "Har fått Respons från företaget."
-                    : "Väntar på Respons från företaget"
-                : "Har inte kontaktat företaget.")}.
-{(Response == String.Empty ? "" : $"\nResponse: {Response}\n")}";
+                Kontaktat: {(Contacted
+                    ? Response != string.Empty
+                        ? "Har fått Respons från företaget."
+                        : "Väntar på Respons från företaget"
+                    : "Har inte kontaktat företaget.")}.
+                {(Response == string.Empty ? "" : $"\nResponse: {Response}\n")}
+                """;
+    }
 }

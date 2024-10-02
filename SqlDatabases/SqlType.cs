@@ -1,8 +1,9 @@
-namespace LiaLista;
-
-public enum SqlType
+namespace LiaLista
 {
-    MsSql,
-    PostgreSql,
-    Sqlite
+    public enum SqlType
+    {
+        MsSql,
+        PostgreSql,
+        Sqlite
+    }
 }

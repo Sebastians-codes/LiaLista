@@ -2,34 +2,36 @@ using LiaLista.CompanyStructure;
 using System.Data.Common;
 using System.Text;
 
-namespace LiaLista.SqlDatabases;
-
-public class SqlRepo
+namespace LiaLista.SqlDatabases
 {
-    private string _connectionString;
-    private ISqlDatabase _database;
-
-    public SqlRepo(SqlType sqlType)
+    public class SqlRepo
     {
-        _database = GetDatabase(sqlType);
+        private readonly string _connectionString;
+        private readonly ISqlDatabase _database;
 
-        if (sqlType != SqlType.Sqlite)
+        public SqlRepo(SqlType sqlType)
         {
-            _connectionString = CreateConnectionString(sqlType);
-        }
-        else
-        {
-            _connectionString = $"Data Source={Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "lialista.db")}";
+            _database = GetDatabase(sqlType);
 
-            if (File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "lialista.db")))
+            if (sqlType != SqlType.Sqlite)
             {
-                return;
+                _connectionString = CreateConnectionString(sqlType);
             }
+            else
+            {
+                _connectionString =
+                    $"Data Source={Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "lialista.db")}";
 
-            using var connection = _database.CreateConnection(_connectionString);
-            connection.Open();
+                if (File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                        "lialista.db")))
+                {
+                    return;
+                }
 
-            string queryString = @"
+                using DbConnection connection = _database.CreateConnection(_connectionString);
+                connection.Open();
+
+                string queryString = @"
                 CREATE TABLE IF NOT EXISTS Company (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     Name TEXT NOT NULL,
@@ -42,314 +44,316 @@ public class SqlRepo
                     Response TEXT DEFAULT ''
                 );";
 
-            using var command = _database.CreateCommand(queryString, connection);
+                using DbCommand command = _database.CreateCommand(queryString, connection);
 
-            command.ExecuteNonQuery();
-        }
+                command.ExecuteNonQuery();
+            }
 
-        if (sqlType == SqlType.MsSql)
-        {
-            _connectionString += ";TrustServerCertificate=true";
-        }
-    }
-
-    private ISqlDatabase GetDatabase(SqlType sqlType)
-    {
-        return sqlType switch
-        {
-            SqlType.PostgreSql => new PostgreSql(),
-            SqlType.MsSql => new MsSql(),
-            SqlType.Sqlite => new SqLite(),
-            _ => throw new NotImplementedException()
-        };
-    }
-
-    private string CreateConnectionString(SqlType sqlType)
-    {
-        if (!File.Exists(".env"))
-        {
-            throw new FileNotFoundException();
-        }
-
-        StringBuilder sb = new();
-        var parts = File.ReadAllLines(".env");
-        var type = _database.GetConnectionStringParts();
-
-        for (int i = 0; i < parts.Length; i++)
-        {
-            if (parts[i] == sqlType.ToString())
+            if (sqlType == SqlType.MsSql)
             {
+                _connectionString += ";TrustServerCertificate=true";
+            }
+        }
+
+        private ISqlDatabase GetDatabase(SqlType sqlType)
+        {
+            return sqlType switch
+            {
+                SqlType.PostgreSql => new PostgreSql(),
+                SqlType.MsSql => new MsSql(),
+                SqlType.Sqlite => new SqLite(),
+                _ => throw new NotImplementedException()
+            };
+        }
+
+        private string CreateConnectionString(SqlType sqlType)
+        {
+            if (!File.Exists(".env"))
+            {
+                throw new FileNotFoundException();
+            }
+
+            StringBuilder sb = new();
+            string[] parts = File.ReadAllLines(".env");
+            string[] type = _database.GetConnectionStringParts();
+
+            for (int i = 0; i < parts.Length; i++)
+            {
+                if (parts[i] != sqlType.ToString())
+                {
+                    continue;
+                }
+
                 for (int j = 1; j < type.Length; j++)
                 {
                     sb.Append($"{type[j]} = {parts[++i]}");
                 }
+
                 break;
             }
+
+            return sb.ToString();
         }
 
-        return sb.ToString();
-    }
-
-    public string GetAll()
-    {
-        StringBuilder sb = new();
-
-        string queryString = "SELECT Name, Number, Website, Focus, Location, Intrest, Contacted, Response" +
-                                " FROM Company ORDER BY Intrest DESC";
-
-        using DbConnection connection = _database.CreateConnection(_connectionString);
-        using DbCommand command = _database.CreateCommand(queryString, connection);
-
-        try
+        public string GetAll()
         {
-            connection.Open();
-            using var reader = command.ExecuteReader();
+            StringBuilder sb = new();
 
-            while (reader.Read())
+            string queryString = "SELECT Name, Number, Website, Focus, Location, Intrest, Contacted, Response" +
+                                 " FROM Company ORDER BY Intrest DESC";
+
+            using DbConnection connection = _database.CreateConnection(_connectionString);
+            using DbCommand command = _database.CreateCommand(queryString, connection);
+
+            try
             {
-                string name = reader.GetString(reader.GetOrdinal("Name"));
-                string number = reader.GetString(reader.GetOrdinal("Number"));
-                string website = reader.GetString(reader.GetOrdinal("Website"));
-                string focus = reader.GetString(reader.GetOrdinal("Focus"));
-                string location = reader.GetString(reader.GetOrdinal("Location"));
-                int intrest = reader.GetInt32(reader.GetOrdinal("Intrest"));
-                bool contacted = reader.GetBoolean(reader.GetOrdinal("Contacted"));
-                string? response = reader.IsDBNull(reader.GetOrdinal("Response")) ?
-                    string.Empty : reader.GetString(reader.GetOrdinal("Response"));
+                connection.Open();
+                using DbDataReader reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    string name = reader.GetString(reader.GetOrdinal("Name"));
+                    string number = reader.GetString(reader.GetOrdinal("Number"));
+                    string website = reader.GetString(reader.GetOrdinal("Website"));
+                    string focus = reader.GetString(reader.GetOrdinal("Focus"));
+                    string location = reader.GetString(reader.GetOrdinal("Location"));
+                    int intrest = reader.GetInt32(reader.GetOrdinal("Intrest"));
+                    bool contacted = reader.GetBoolean(reader.GetOrdinal("Contacted"));
+                    string response = reader.IsDBNull(reader.GetOrdinal("Response"))
+                        ? string.Empty
+                        : reader.GetString(reader.GetOrdinal("Response"));
 
 
-                Company company = new(name, number, website, focus, location, intrest, contacted, response);
-                sb.Append(company.ToString());
+                    Company company = new(name, number, website, focus, location, intrest, contacted, response);
+                    sb.Append(company.ToString());
+                }
             }
-        }
-        catch (DbException e)
-        {
-            Console.WriteLine(e.Message);
-        }
-
-        if (sb.Length == 0)
-        {
-            return "There is no companies in the database";
-        }
-
-        return sb.ToString();
-    }
-
-    public string GetCompany(string companyName)
-    {
-        string queryString = _database.GetCommands()["Get Company"];
-        queryString = queryString.Replace("companyName", $"{companyName}");
-        using var connection = _database.CreateConnection(_connectionString);
-        using var command = _database.CreateCommand(queryString, connection);
-
-        try
-        {
-            connection.Open();
-            using var reader = command.ExecuteReader();
-
-            while (reader.Read())
+            catch (DbException e)
             {
-                string name = reader.GetString(reader.GetOrdinal("Name"));
-                string number = reader.GetString(reader.GetOrdinal("Number"));
-                string website = reader.GetString(reader.GetOrdinal("Website"));
-                string focus = reader.GetString(reader.GetOrdinal("Focus"));
-                string location = reader.GetString(reader.GetOrdinal("Location"));
-                int intrest = reader.GetInt32(reader.GetOrdinal("Intrest"));
-                bool contacted = reader.GetBoolean(reader.GetOrdinal("Contacted"));
-                string? response = reader.IsDBNull(reader.GetOrdinal("Response")) ?
-                    string.Empty : reader.GetString(reader.GetOrdinal("Response"));
-                Company company = new(name, number, website, focus, location, intrest, contacted, response);
-
-                return company.ToString();
+                Console.WriteLine(e.Message);
             }
+
+            return sb.Length == 0 ? "There is no companies in the database" : sb.ToString();
         }
-        catch (DbException e)
+
+        public string GetCompany(string companyName)
         {
-            Console.WriteLine(e.Message);
+            string queryString = _database.GetCommands()["Get Company"];
+            queryString = queryString.Replace("companyName", $"{companyName}");
+            using DbConnection connection = _database.CreateConnection(_connectionString);
+            using DbCommand command = _database.CreateCommand(queryString, connection);
+
+            try
+            {
+                connection.Open();
+                using DbDataReader reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    string name = reader.GetString(reader.GetOrdinal("Name"));
+                    string number = reader.GetString(reader.GetOrdinal("Number"));
+                    string website = reader.GetString(reader.GetOrdinal("Website"));
+                    string focus = reader.GetString(reader.GetOrdinal("Focus"));
+                    string location = reader.GetString(reader.GetOrdinal("Location"));
+                    int intrest = reader.GetInt32(reader.GetOrdinal("Intrest"));
+                    bool contacted = reader.GetBoolean(reader.GetOrdinal("Contacted"));
+                    string response = reader.IsDBNull(reader.GetOrdinal("Response"))
+                        ? string.Empty
+                        : reader.GetString(reader.GetOrdinal("Response"));
+                    Company company = new(name, number, website, focus, location, intrest, contacted, response);
+
+                    return company.ToString();
+                }
+            }
+            catch (DbException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+
+            return "There where no company with that name";
         }
 
-        return "There where no company with that name";
-    }
-
-    public string Add(Company company)
-    {
-        using var connection = _database.CreateConnection(_connectionString);
-        using var command = _database.CreateCommand(
+        public string Add(Company company)
+        {
+            using DbConnection connection = _database.CreateConnection(_connectionString);
+            using DbCommand command = _database.CreateCommand(
                 "INSERT INTO Company (Name, Number, Website, Focus, Location, Intrest)" +
                 "VALUES (@Name, @Number, @Website, @Focus, @Location, @Intrest)", connection);
 
-        command.Parameters.Add(CreateParameter(command, "@Name", company.CompanyName));
-        command.Parameters.Add(CreateParameter(command, "@Number", company.PhoneNumber));
-        command.Parameters.Add(CreateParameter(command, "@Website", company.Website));
-        command.Parameters.Add(CreateParameter(command, "@Focus", company.Focus));
-        command.Parameters.Add(CreateParameter(command, "@Location", company.Location));
-        command.Parameters.Add(CreateParameter(command, "@Intrest", company.Intrest));
+            command.Parameters.Add(CreateParameter(command, "@Name", company.CompanyName));
+            command.Parameters.Add(CreateParameter(command, "@Number", company.PhoneNumber));
+            command.Parameters.Add(CreateParameter(command, "@Website", company.Website));
+            command.Parameters.Add(CreateParameter(command, "@Focus", company.Focus));
+            command.Parameters.Add(CreateParameter(command, "@Location", company.Location));
+            command.Parameters.Add(CreateParameter(command, "@Intrest", company.Intrest));
 
-        try
-        {
-            connection.Open();
-            command.ExecuteNonQuery();
-            return @$"Company Successfully added.
+            try
+            {
+                connection.Open();
+                command.ExecuteNonQuery();
+                return @$"Company Successfully added.
 
 {company.ToString()}";
+            }
+            catch (DbException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+
+            return "There was already a Company with that name";
         }
-        catch (DbException e)
+
+        public string SetResponse(string companyName, string response)
         {
-            Console.WriteLine(e.Message);
-        }
-
-        return "There was already a Company with that name";
-    }
-
-    public string SetResponse(string companyName, string response)
-    {
-        using var connection = _database.CreateConnection(_connectionString);
-        using var command = _database.CreateCommand(
+            using DbConnection connection = _database.CreateConnection(_connectionString);
+            using DbCommand command = _database.CreateCommand(
                 "UPDATE Company SET Response = @Value WHERE Name = @CompanyName", connection);
 
-        command.Parameters.Add(CreateParameter(command, "@Value", response));
-        command.Parameters.Add(CreateParameter(command, "@CompanyName", companyName));
+            command.Parameters.Add(CreateParameter(command, "@Value", response));
+            command.Parameters.Add(CreateParameter(command, "@CompanyName", companyName));
 
-        try
-        {
-            connection.Open();
-            command.ExecuteNonQuery();
-            return "Company has been set to Responded";
+            try
+            {
+                connection.Open();
+                command.ExecuteNonQuery();
+                return "Company has been set to Responded";
+            }
+            catch (DbException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+
+            return "----";
         }
-        catch (DbException e)
+
+        public string SetContacted(string companyName)
         {
-            Console.WriteLine(e.Message);
-        }
-
-        return "----";
-    }
-
-    public string SetContacted(string companyName)
-    {
-        using var connection = _database.CreateConnection(_connectionString);
-        using var command = _database.CreateCommand(
+            using DbConnection connection = _database.CreateConnection(_connectionString);
+            using DbCommand command = _database.CreateCommand(
                 "UPDATE Company SET Contacted = @Value WHERE Name = @CompanyName", connection);
 
-        command.Parameters.Add(CreateParameter(command, "@Value", true));
-        command.Parameters.Add(CreateParameter(command, "@CompanyName", companyName));
+            command.Parameters.Add(CreateParameter(command, "@Value", true));
+            command.Parameters.Add(CreateParameter(command, "@CompanyName", companyName));
 
-        try
-        {
-            connection.Open();
-            command.ExecuteNonQuery();
-            return "Company has been set to Contacted";
+            try
+            {
+                connection.Open();
+                command.ExecuteNonQuery();
+                return "Company has been set to Contacted";
+            }
+            catch (DbException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+
+            return "----";
         }
-        catch (DbException e)
+
+        public string GetWaitingForResponse()
         {
-            Console.WriteLine(e.Message);
-        }
+            StringBuilder sb = new();
 
-        return "----";
-    }
-
-    public string GetWaitingForResponse()
-    {
-        StringBuilder sb = new();
-
-        using var connection = _database.CreateConnection(_connectionString);
-        using var command = _database.CreateCommand(
+            using DbConnection connection = _database.CreateConnection(_connectionString);
+            using DbCommand command = _database.CreateCommand(
                 "SELECT * FROM Company" +
                 " WHERE Contacted = true AND Response = ''" +
                 " ORDER BY Intrest DESC", connection);
-        try
-        {
-            connection.Open();
-            using var reader = command.ExecuteReader();
-
-            while (reader.Read())
+            try
             {
-                string name = reader.GetString(reader.GetOrdinal("Name"));
-                string number = reader.GetString(reader.GetOrdinal("Number"));
-                string website = reader.GetString(reader.GetOrdinal("Website"));
-                string focus = reader.GetString(reader.GetOrdinal("Focus"));
-                string location = reader.GetString(reader.GetOrdinal("Location"));
-                int intrest = reader.GetInt32(reader.GetOrdinal("Intrest"));
-                bool contacted = reader.GetBoolean(reader.GetOrdinal("Contacted"));
-                string? response = reader.IsDBNull(reader.GetOrdinal("Response")) ?
-                    string.Empty : reader.GetString(reader.GetOrdinal("Response"));
-                Company company = new(name, number, website, focus, location, intrest, contacted, response);
-                sb.Append(company.ToString());
+                connection.Open();
+                using DbDataReader reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    string name = reader.GetString(reader.GetOrdinal("Name"));
+                    string number = reader.GetString(reader.GetOrdinal("Number"));
+                    string website = reader.GetString(reader.GetOrdinal("Website"));
+                    string focus = reader.GetString(reader.GetOrdinal("Focus"));
+                    string location = reader.GetString(reader.GetOrdinal("Location"));
+                    int intrest = reader.GetInt32(reader.GetOrdinal("Intrest"));
+                    bool contacted = reader.GetBoolean(reader.GetOrdinal("Contacted"));
+                    string response = reader.IsDBNull(reader.GetOrdinal("Response"))
+                        ? string.Empty
+                        : reader.GetString(reader.GetOrdinal("Response"));
+                    Company company = new(name, number, website, focus, location, intrest, contacted, response);
+                    sb.Append(company.ToString());
+                }
             }
+            catch (DbException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+
+            return sb.ToString();
         }
-        catch (DbException e)
+
+        public string GetResponded()
         {
-            Console.WriteLine(e.Message);
-        }
+            StringBuilder sb = new();
 
-        return sb.ToString();
-
-    }
-
-    public string GetResponded()
-    {
-        StringBuilder sb = new();
-
-        using var connection = _database.CreateConnection(_connectionString);
-        using var command = _database.CreateCommand(
+            using DbConnection connection = _database.CreateConnection(_connectionString);
+            using DbCommand command = _database.CreateCommand(
                 "SELECT * FROM Company" +
                 " WHERE Response != ''" +
                 " ORDER BY Intrest", connection);
 
-        try
-        {
-            connection.Open();
-            using var reader = command.ExecuteReader();
-
-            while (reader.Read())
+            try
             {
-                string name = reader.GetString(reader.GetOrdinal("Name"));
-                string number = reader.GetString(reader.GetOrdinal("Number"));
-                string website = reader.GetString(reader.GetOrdinal("Website"));
-                string focus = reader.GetString(reader.GetOrdinal("Focus"));
-                string location = reader.GetString(reader.GetOrdinal("Location"));
-                int intrest = reader.GetInt32(reader.GetOrdinal("Intrest"));
-                bool contacted = reader.GetBoolean(reader.GetOrdinal("Contacted"));
-                string? response = reader.IsDBNull(reader.GetOrdinal("Response")) ?
-                    string.Empty : reader.GetString(reader.GetOrdinal("Response"));
-                Company company = new(name, number, website, focus, location, intrest, contacted, response);
-                sb.Append(company.ToString());
+                connection.Open();
+                using DbDataReader reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    string name = reader.GetString(reader.GetOrdinal("Name"));
+                    string number = reader.GetString(reader.GetOrdinal("Number"));
+                    string website = reader.GetString(reader.GetOrdinal("Website"));
+                    string focus = reader.GetString(reader.GetOrdinal("Focus"));
+                    string location = reader.GetString(reader.GetOrdinal("Location"));
+                    int intrest = reader.GetInt32(reader.GetOrdinal("Intrest"));
+                    bool contacted = reader.GetBoolean(reader.GetOrdinal("Contacted"));
+                    string response = reader.IsDBNull(reader.GetOrdinal("Response"))
+                        ? string.Empty
+                        : reader.GetString(reader.GetOrdinal("Response"));
+                    Company company = new(name, number, website, focus, location, intrest, contacted, response);
+                    sb.Append(company.ToString());
+                }
             }
+            catch (DbException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+
+            return sb.ToString();
         }
-        catch (DbException e)
+
+        public string Remove(string companyName)
         {
-            Console.WriteLine(e.Message);
-        }
-
-        return sb.ToString();
-    }
-
-    public string Remove(string companyName)
-    {
-        using var connection = _database.CreateConnection(_connectionString);
-        using var command = _database.CreateCommand(
+            using DbConnection connection = _database.CreateConnection(_connectionString);
+            using DbCommand command = _database.CreateCommand(
                 "DELETE FROM Company WHERE Name = @CompanyName", connection);
 
-        command.Parameters.Add(CreateParameter(command, "@CompanyName", companyName));
+            command.Parameters.Add(CreateParameter(command, "@CompanyName", companyName));
 
-        try
-        {
-            connection.Open();
-            command.ExecuteNonQuery();
-            return "Company has been removed";
+            try
+            {
+                connection.Open();
+                command.ExecuteNonQuery();
+                return "Company has been removed";
+            }
+            catch (DbException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+
+            return "There was already a Company with that name";
         }
-        catch (DbException e)
+
+        private static DbParameter CreateParameter(DbCommand command, string name, object value)
         {
-            Console.WriteLine(e.Message);
+            DbParameter parameter = command.CreateParameter();
+            parameter.ParameterName = name;
+            parameter.Value = value;
+            return parameter;
         }
-
-        return "There was already a Company with that name";
-    }
-
-    private DbParameter CreateParameter(DbCommand command, string name, object value)
-    {
-        DbParameter parameter = command.CreateParameter();
-        parameter.ParameterName = name;
-        parameter.Value = value;
-        return parameter;
     }
 }

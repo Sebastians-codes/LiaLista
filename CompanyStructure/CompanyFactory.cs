@@ -1,16 +1,17 @@
-namespace LiaLista.CompanyStructure;
-
-public static class CompanyFactory
+namespace LiaLista.CompanyStructure
 {
-    public static Company Make()
+    public static class CompanyFactory
     {
-        string companyName = Utils.GetString("Företags namn: ->> ");
-        string phoneNumber = Utils.GetString("Telefon nummer: ->> ");
-        string website = Utils.GetString("Hemsida: ->> ");
-        string focus = Utils.GetString("Fokus: ->> ");
-        string location = Utils.GetString("Address: ->> ");
-        int intrest = Utils.GetInt("Intresse: ->> ");
+        public static Company Make()
+        {
+            string companyName = Utils.GetString("Företags namn: ->> ");
+            string phoneNumber = Utils.GetString("Telefon nummer: ->> ");
+            string website = Utils.GetString("Hemsida: ->> ");
+            string focus = Utils.GetString("Fokus: ->> ");
+            string location = Utils.GetString("Address: ->> ");
+            int intrest = Utils.GetInt("Intresse: ->> ");
 
-        return new Company(companyName, phoneNumber, website, focus, location, intrest);
+            return new Company(companyName, phoneNumber, website, focus, location, intrest);
+        }
     }
 }
