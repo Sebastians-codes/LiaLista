@@ -59,6 +59,7 @@ public class SqlRepo
             SqlType.PostgreSql => new PostgreSql(),
             SqlType.MsSql => new MsSql(),
             SqlType.Sqlite => new SqLite(),
+            _ => throw new NotImplementedException()
         };
     }
 
