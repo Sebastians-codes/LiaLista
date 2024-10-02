@@ -4,7 +4,7 @@ create a .env
 
 stucture
 
-PostgreSql
+PostgreSql\n
 "Server Name"
 "Port"
 "Database"
