@@ -27,6 +27,7 @@ public class SqlRepo
 
             using var connection = _database.CreateConnection(_connectionString);
             connection.Open();
+
             string queryString = @"
                 CREATE TABLE IF NOT EXISTS Company (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,7 +40,9 @@ public class SqlRepo
                     Contacted INTEGER DEFAULT 0,
                     Response TEXT DEFAULT ''
                 );";
+
             using var command = _database.CreateCommand(queryString, connection);
+
             command.ExecuteNonQuery();
         }
 
@@ -152,6 +155,7 @@ public class SqlRepo
                 string? response = reader.IsDBNull(reader.GetOrdinal("Response")) ?
                     string.Empty : reader.GetString(reader.GetOrdinal("Response"));
                 Company company = new(name, number, website, focus, location, intrest, contacted, response);
+
                 return company.ToString();
             }
         }
@@ -189,6 +193,7 @@ public class SqlRepo
         {
             Console.WriteLine(e.Message);
         }
+
         return "There was already a Company with that name";
     }
 
@@ -211,6 +216,7 @@ public class SqlRepo
         {
             Console.WriteLine(e.Message);
         }
+
         return "----";
     }
 
@@ -233,6 +239,7 @@ public class SqlRepo
         {
             Console.WriteLine(e.Message);
         }
+
         return "----";
     }
 
@@ -283,6 +290,7 @@ public class SqlRepo
                 "SELECT * FROM Company" +
                 " WHERE Response != ''" +
                 " ORDER BY Intrest", connection);
+
         try
         {
             connection.Open();
@@ -329,6 +337,7 @@ public class SqlRepo
         {
             Console.WriteLine(e.Message);
         }
+
         return "There was already a Company with that name";
     }
 
