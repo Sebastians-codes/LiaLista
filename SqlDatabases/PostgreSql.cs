@@ -12,7 +12,7 @@ public class PostgreSql : ISqlDatabase
         new NpgsqlCommand(commandText, (NpgsqlConnection)connection);
 
     public string[] GetConnectionStringParts() =>
-        new[] { "Host", ";Port", ";Database", ";Username", ";Password" };
+        new[] { "PostgreSql", "Host", ";Port", ";Database", ";Username", ";Password" };
 
     public Dictionary<string, string> GetCommands() =>
         commands;

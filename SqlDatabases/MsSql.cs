@@ -12,7 +12,7 @@ public class MsSql : ISqlDatabase
         new SqlCommand(commandText, (SqlConnection)connection);
 
     public string[] GetConnectionStringParts() =>
-        new[] { "Server", "Database", "User Id", "Password" };
+        new[] { "MsSql", ";Server", ";Database", ";User Id", ";Password" };
 
     public Dictionary<string, string> GetCommands() =>
         commands;

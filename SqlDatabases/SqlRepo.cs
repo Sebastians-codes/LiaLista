@@ -14,7 +14,7 @@ public class SqlRepo
 
         if (sqlType != SqlType.Sqlite)
         {
-            _connectionString = CreateConnectionString();
+            _connectionString = CreateConnectionString(sqlType);
         }
         else
         {
@@ -45,7 +45,7 @@ public class SqlRepo
 
         if (sqlType == SqlType.MsSql)
         {
-            _connectionString += " -C";
+            _connectionString += ";TrustServerCertificate=true";
         }
     }
 
@@ -59,7 +59,7 @@ public class SqlRepo
         };
     }
 
-    private string CreateConnectionString()
+    private string CreateConnectionString(SqlType sqlType)
     {
         if (!File.Exists(".env"))
         {
@@ -70,9 +70,16 @@ public class SqlRepo
         var parts = File.ReadAllLines(".env");
         var type = _database.GetConnectionStringParts();
 
-        for (int i = 0; i < type.Length; i++)
+        for (int i = 0; i < parts.Length; i++)
         {
-            sb.Append($"{type[i]} = {parts[i]}");
+            if (parts[i] == sqlType.ToString())
+            {
+                for (int j = 1; j < type.Length; j++)
+                {
+                    sb.Append($"{type[j]} = {parts[++i]}");
+                }
+                break;
+            }
         }
 
         return sb.ToString();
