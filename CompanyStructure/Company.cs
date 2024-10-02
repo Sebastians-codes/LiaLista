@@ -1,4 +1,4 @@
-namespace LiaLista;
+namespace LiaLista.CompanyStructure;
 
 public struct Company
 {

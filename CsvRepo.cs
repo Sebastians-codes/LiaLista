@@ -1,3 +1,4 @@
+using LiaLista.CompanyStructure;
 using System.Text;
 
 namespace LiaLista;

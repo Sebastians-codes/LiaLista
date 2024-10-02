@@ -1,3 +1,4 @@
+using LiaLista.CompanyStructure;
 using LiaLista.SqlDatabases;
 
 namespace LiaLista.App;
